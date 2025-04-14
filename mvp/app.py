@@ -19,7 +19,7 @@ def is_used(email):
 
 def mark_used(email):
     with open(USED_EMAILS_FILE, "a") as f:
-        f.write(email.strip() + "\\n")
+        f.write(email.strip() + "\n")
 
 @app.route("/", methods=["GET"])
 def health_check():
@@ -46,11 +46,11 @@ def webhook():
     captions_raw = response.choices[0].message.content.strip()
     captions_html = format_captions(captions_raw)
 
-    html_email = f\"\"\"<div style="font-family:Arial;padding:20px;">
+    html_email = f"""<div style="font-family:Arial;padding:20px;">
       <h2>Hei! 👋</h2>
       <p>Her er dine captions for <strong>{plattform}</strong> om <strong>{tema}</strong>:</p>
       <div style="background:#eee;padding:10px;margin:10px 0;">{captions_html}</div>
-    </div>\"\"\"
+    </div>"""
 
     send_email(email, f"Dine InstaPrompt captions for {plattform}", html_email)
     mark_used(email)
