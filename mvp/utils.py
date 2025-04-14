@@ -1,33 +1,49 @@
-import smtplib
-from email.message import EmailMessage
+# utils.py
+
 import os
-from dotenv import load_dotenv
+import openai
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
-load_dotenv()
+openai.api_key = os.environ.get("OPENAI_API_KEY")
 
-def generate_prompt(plattform, tema):
-    return f"""Lag 3 engasjerende captions for sosiale medier basert på:
 
-Plattform: {plattform}
-Tema: {tema}
+def generate_caption(topic, platform):
+    prompt = f"Generer en engasjerende caption til {platform} om emnet: {topic}.\n\n"
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[
+            {"role": "system", "content": "Du er en kreativ tekstforfatter for sosiale medier."},
+            {"role": "user", "content": prompt}
+        ]
+    )
+    return response["choices"][0]["message"]["content"].strip()
 
-Regler:
-- Maks 3 linjer per caption
-- Bruk emojis og relevante hashtags
-- Svar kun med selve captionene, nummerert
-"""
 
-def format_captions(text):
-    return text.replace("\n", "<br>")
+def send_email(receiver_email, caption_text):
+    sender_email = os.environ.get("EMAIL_ADDRESS")
+    password = os.environ.get("EMAIL_PASSWORD")
 
-def send_email(to_email, subject, html_content):
-    msg = EmailMessage()
-    msg["Subject"] = subject
-    msg["From"] = os.getenv("EMAIL_FROM")
-    msg["To"] = to_email
-    msg.set_content("Din e-postklient støtter ikke HTML.")
-    msg.add_alternative(html_content, subtype='html')
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = "Din nye caption er klar!"
+    msg["From"] = sender_email
+    msg["To"] = receiver_email
 
-    with smtplib.SMTP_SSL(os.getenv("SMTP_SERVER"), int(os.getenv("SMTP_PORT"))) as smtp:
-        smtp.login(os.getenv("SMTP_USERNAME"), os.getenv("SMTP_PASSWORD"))
-        smtp.send_message(msg)
+    html = f"""
+    <html>
+      <body style="font-family: Arial, sans-serif; padding: 20px;">
+        <h2>🚀 Din caption er klar!</h2>
+        <p>{caption_text}</p>
+        <hr>
+        <p>Hilsen InstaPrompt</p>
+      </body>
+    </html>
+    """
+
+    msg.attach(MIMEText(html, "html"))
+
+    with smtplib.SMTP("smtp.gmail.com", 587) as server:
+        server.starttls()
+        server.login(sender_email, password)
+        server.send_message(msg)
