@@ -101,3 +101,6 @@ def webhook():
     except Exception as e:
         print("❌ Email sending failed:", e)
         return "Email error",
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=3000)
